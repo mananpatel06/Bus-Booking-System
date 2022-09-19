@@ -1,0 +1,140 @@
+----------------------- table ---------------------------------
+
+
+create table bus(bus_name char(15) primary key,total_seats number(3),reserved_seats number(3),price number(3));
+
+create table busreservation(bus_name char(15) references bus_details(bus_name),seat_id number(3),reserved char(2) check (reserved in('y','n')),customer_name char(15));
+
+
+---------------------bus detail enter --------------
+
+declare
+ bname char(15);
+ tot number(3);
+ resv number(3);
+p number;
+ cursor cur is select * from bus;
+ begin
+open cur;
+ loop
+fetch cur into bname,tot,resv,p;
+ if cur%found then
+for i in 1 .. tot loop
+insert into busreservation values(bname,i,'n',null);
+end loop;
+else
+exit;
+end if;
+end loop;
+ close cur;
+ end;
+/
+
+select* from busreservation ;
+
+
+
+declare
+ bus_name char(15);
+ total_seats number(3);
+price number;
+ begin
+bus_name :=:bus_name;
+total_seats :=:total_seats ;
+price :=:price;
+for i in 1 .. total_seats loop
+insert into bus values(bus_name ,i,0,price);
+end loop;
+ end;
+
+
+select* from bus;
+
+------------------------------- bus reserve seat -------------------------
+
+declare
+cname char(15);
+bname char(15);
+sid number(3);
+tot number(3);
+resv number(3);
+totalseat number(2);
+
+cursor c1 is select * from busreservation ;
+var c1%rowtype;
+
+begin
+cname:= :cname;
+bname:=:bname;
+totalseat :=:totalseat ;
+select total_seats into tot from bus where bus_name=bname;
+select reserved_seats into resv from bus where bus_name=bname;
+
+if tot>resv then
+for i in 1 .. totalseat loop
+
+select MIN(seat_id) into sid from busreservation where bus_name=bname and reserved='n';
+
+update busreservation set reserved='y' where bus_name=bname and seat_id=sid;
+
+update busreservation set customer_name=cname where bus_name=bname and seat_id=sid;
+
+update bus set reserved_seats=reserved_seats+1 where bus_name=bname;
+
+end loop;
+
+else 
+dbms_output.put_line('No seat avalable');
+
+end if; 
+for i in c1 loop
+dbms_output.put_line(i.bus_name || ' ' || i.seat_id || ' ' || i.reserved || ' ' || i.customer_name );
+end loop;
+          
+end;
+
+-------------------------bus seat cancel ---------------------------
+
+declare
+cname char(15);
+bname char(15);
+sid number(3);
+resv number(3);
+seat number(2);
+
+cursor c1 is select * from busreservation ;
+var c1%rowtype;
+
+begin
+cname:= :cname;
+bname:= :bname;
+seat:= :seat;
+
+select reserved_seats into resv from bus where bus_name=bname;
+           
+if resv>0 then
+for i in 1 .. seat loop
+            select MAX(seat_id) into sid from busreservation where bus_name=bname and reserved='y'and customer_name=cname;
+            update busreservation set reserved='n' where bus_name=bname and seat_id=sid;
+            update busreservation set customer_name=null where bus_name=bname and seat_id=sid;
+            update bus set reserved_seats=reserved_seats-1 where bus_name=bname;
+end loop;
+else
+ dbms_output.put_line('Cancelation not allow');
+end if;
+
+for i in c1 loop
+dbms_output.put_line(i.bus_name || ' ' || i.seat_id || ' ' || i.reserved || ' ' || i.customer_name );
+end loop;
+
+end;
+
+
+select * from busreservation;
+
+
+-- Created By Manan Patel 
+
+
+
+
