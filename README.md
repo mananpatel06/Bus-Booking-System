@@ -5,4 +5,4 @@ This project is implemented with Oracle 10g.
 
 Code available in .txt file.
 
-Output available in .docx file.
+Output available in .pdf file.
